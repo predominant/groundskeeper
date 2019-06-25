@@ -1,0 +1,269 @@
+#!/bin/bash
+
+CLONE_DEPTH=1
+CORE_PLANS_GIT_URI="git@github.com:habitat-sh/core-plans.git"
+CLONE_DIR="core-plans"
+STUDIO_TYPE="groundskeeper"
+DEBUG=${DEBUG:-0}
+
+ALL_PLANS=()
+
+INDENTED=0
+WAS_INDENTED=0
+
+# Setup formatting to indent all output with prefixed spaces
+do_indent() {
+  INDENTED=1
+  exec 3>&1 1> >(sed 's/^/    /')
+  exec 4>&2 2> >(sed 's/^/    /')
+}
+
+# Clear indentation / formatting prefix
+clear_indent() {
+  exec 1>&3 3>&-
+  exec 2>&4 4>&-
+  INDENTED=0
+}
+
+debug_echo() {
+  if [ ${DEBUG} -eq 0 ]; then
+    return 0
+  fi
+
+  echo "${@}" >&2
+}
+
+# Prepare dependencies for this script
+# - Habitat repo (contains REPL attach command)
+prepare_dependencies() {
+  echo "[ Habitat ] ------------------------------------------"
+  if [ ! -d habitat ]; then
+    git clone --depth 1 git@github.com:habitat-sh/habitat.git habitat
+    return $?
+  fi
+  update_repository habitat
+  status=$?
+  echo
+  return ${status}
+}
+
+# Clone the core-plans repository
+clone_repository() {
+  echo "[ Core Plans ] ------------------------------------------"
+  if [ ! -d "${CLONE_DIR}" ]; then
+    git clone --depth "${CLONE_DEPTH}" "${CORE_PLANS_GIT_URI}" "${CLONE_DIR}"
+    return $?
+  fi
+  update_repository "${CLONE_DIR}"
+  status=$?
+  echo
+  return ${status}
+}
+
+# Update the repository in the specified directory (must already exist)
+# ```
+# update_repository habitat
+# ```
+update_repository() {
+  pushd "${1}" > /dev/null
+    git remote update && \
+    git reset --hard origin/master
+    status=$?
+  popd > /dev/null
+  return ${status}
+}
+
+# Get an array of all plans
+get_all_plans() {
+  ALL_PLANS=($(find "${CLONE_DIR}" -name plan.sh -d 2 | sort | awk -F'/' '{print $2}'))
+}
+
+debug_plans() {
+  for plan in "${ALL_PLANS[@]}"; do
+    echo " - ${plan}"
+  done
+}
+
+do_latest_version() {
+  do_default_latest_version "${1}"
+}
+
+# Meta function, to find latest release from any plan.
+# The hard work is done in other functions, this ties them together.
+do_default_latest_version() {
+  local plan="${1}"
+  local is_github=0
+  local pkg_source_line=""
+
+  pushd "${CLONE_DIR}/${plan}" > /dev/null
+    pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
+  popd > /dev/null
+
+  if [[ ${pkg_source_line} =~ github\.com\/.*\/archive\/ ]]; then
+    is_github=1
+    repo_ident=$(github_repo_ident "${plan}")
+    latest_version=$(github_latest_version "${repo_ident}")
+    status=$?
+    echo "${latest_version}"
+    return ${status}
+  fi
+
+
+}
+
+# Check 'github releases' for the latest version of a repo
+#
+# 1. Get latest release from github
+# 2. If (1) is a pre-release, try fetching the latest non-prerelease from all releases
+# 3. If (1) is invalid/null, try fetching the latest non-prerelease from all releases
+# 
+# ```
+# github_latest_release owner/repo-name
+# ```
+github_latest_version() {
+  plan_count_github=$((plan_count_github + 1))
+
+  local ident="${1}"
+
+  # TODO: Switch for exceptions to the general github rule.
+
+  local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
+  local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
+  if [ "${is_prerelease}" = "true" ]; then
+    github_newest_release "${ident}"
+  fi
+
+  local latest_version=$(echo "${latest_json}" | jq -r '.tag_name')
+
+  if [ "${latest_version}" = "" -o "${latest_version}" = "null" ]; then
+    # TODO: Search for latest tag?
+    echo "unknown"
+    return 1
+  fi
+
+  echo "${latest_version}"
+  return 0
+}
+
+github_newest_release() {
+
+}
+
+# Get the github repo ident (owner/repo) from a pkg_source line
+github_repo_ident() {
+  local plan="${1}"
+  local ident=""
+  pushd "${CLONE_DIR}/${plan}" > /dev/null
+    ident=$(cat plan.sh \
+      | grep pkg_source \
+      | grep "github\.com\/.*\/archive\/" \
+      | sed -E 's/^.*github\.com\/([^\/]+)\/([^\/]+)\/.*/\1\/\2/')
+  popd > /dev/null
+
+  if [ "${ident}" = "" ]; then
+    echo "unknown/unknown"
+    return 1
+  fi
+
+  echo "${ident}"
+  return 0
+}
+
+# Attempt to clean up a version string, takes the plan name as a parameter
+# in case it has a special / weird ruleset.
+# ```
+# clean_version_string v0.4.0 acbuild
+# clean_version_string v0.4.0
+# ```
+clean_version_string() {
+  local version="${1}"
+  local plan="${2:-}"
+  local clean_version="${version}"
+  debug_echo "Cleaning version: ${version}"
+
+  # TODO: Switch for special plan rules.
+
+  # Remove preceding 'v' on versions
+  clean_version="$(echo "${clean_version}" | sed 's/^v//')"
+
+  debug_echo "Cleaned version: ${clean_version}"
+  echo "${clean_version}"
+  return 0
+}
+
+# Get the current version of a plan
+# ```
+# plan_version hugo
+# ```
+plan_version() {
+  local version=""
+  pushd "${CLONE_DIR}/${plan}" > /dev/null
+    version=$(cat plan.sh | grep "^pkg_version=" | sed 's/pkg_version=\"*\([^\"]*\)\"*/\1/g')
+  popd > /dev/null
+
+  if [ "${version}" = "" ]; then
+    return 1
+  fi
+
+  echo "${version}"
+  return 0
+}
+
+# **Internal** Used to override the interactive shell/debugging session
+# borrowed from hab-plan-build.
+_attach_whereami() {
+  echo
+}
+
+check_environment() {
+  if [ -z "${GITHUB_TOKEN:-}" -o -z "${GITHUB_USERNAME}" ]; then
+    echo "You must set your Github Username and Token:"
+    echo "  export GITHUB_TOKEN=\"16469f23c164a8a92fd3c438e06a5ae2340d7f14\""
+    echo "  export GITHUB_USERNAME=\"predominant\""
+    echo
+    echo "You can create a Github personal access token here:"
+    echo "  https://github.com/settings/tokens/new"
+    echo
+    exit 1
+  fi
+}
+
+check_environment
+prepare_dependencies || exit 1
+clone_repository || exit 1
+
+source habitat/components/plan-build/bin/public.bash
+source habitat/components/plan-build/bin/shared.bash
+
+get_all_plans
+
+plan_count_total=0
+plan_count_github=0
+
+for plan in "${ALL_PLANS[@]}"; do
+  plan_count_total=$((plan_count_total + 1))
+
+  echo "${plan}:"
+  pv=$(plan_version "${plan}")
+  pv_status=$?
+  echo "  Plan version  : ${pv}"
+  lv=$(clean_version_string "$(do_latest_version "${plan}")")
+  lv_status=$?
+  echo "  Latest version: ${lv}"
+
+  if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ]; then
+    echo "  ^--- Maybe requires update"
+  fi
+
+  echo
+
+  # TEMPORARY measure to prevent looping all plans during development.
+  if [ "${plan}" = "geos" ]; then
+    break
+  fi
+done
+
+
+echo "[ Summary ] ------------------------------------------"
+echo "  Total plans:    ${plan_count_total}"
+echo "  Github sourced: ${plan_count_github}"
