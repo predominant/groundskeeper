@@ -99,16 +99,15 @@ do_default_latest_version() {
     pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
   popd > /dev/null
 
-  if [[ ${pkg_source_line} =~ github\.com\/.*\/archive\/ ]]; then
+  if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
     is_github=1
+    plan_count_github=$((plan_count_github + 1))
     repo_ident=$(github_repo_ident "${plan}")
     latest_version=$(github_latest_version "${repo_ident}")
     status=$?
     echo "${latest_version}"
     return ${status}
   fi
-
-
 }
 
 # Check 'github releases' for the latest version of a repo
@@ -121,16 +120,18 @@ do_default_latest_version() {
 # github_latest_release owner/repo-name
 # ```
 github_latest_version() {
-  plan_count_github=$((plan_count_github + 1))
-
   local ident="${1}"
 
-  # TODO: Switch for exceptions to the general github rule.
+  if [ "${ident}" = "ansible/ansible" ]; then
+    # TODO: Parse ansible's page
+    return 0
+  fi
 
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
   local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
   if [ "${is_prerelease}" = "true" ]; then
     github_newest_release "${ident}"
+    return $?
   fi
 
   local latest_version=$(echo "${latest_json}" | jq -r '.tag_name')
@@ -146,6 +147,9 @@ github_latest_version() {
 }
 
 github_newest_release() {
+  local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases")
+
+  local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
 
 }
 
@@ -266,4 +270,5 @@ done
 
 echo "[ Summary ] ------------------------------------------"
 echo "  Total plans:    ${plan_count_total}"
+# TODO: This is broken.. Probably something to do with subshells and arithmetic.
 echo "  Github sourced: ${plan_count_github}"
