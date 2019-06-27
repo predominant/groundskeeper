@@ -107,10 +107,14 @@ do_default_latest_version() {
   if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
     is_github=1
     repo_ident=$(github_repo_ident "${plan}")
-    latest_version=$(github_latest_version "${repo_ident}")
-    status=$?
-    echo "${latest_version}"
-    return ${status}
+    github_latest_version "${repo_ident}"
+    return $?
+  fi
+
+  if [[ "${pkg_source_line}" =~ downloads\.sourceforge\.net\/ ]]; then
+    project_name="$(sourceforge_project_name "${plan}")"
+    sourceforge_latest_version "${project_name}"
+    return $?
   fi
 }
 
@@ -163,7 +167,42 @@ github_repo_ident() {
   popd > /dev/null
 
   if [ "${ident}" = "" ]; then
-    echo "unknown/unknown"
+    echo "Github: unknown/unknown"
+    return 1
+  fi
+
+  echo "${ident}"
+  return 0
+}
+
+sourceforge_latest_version() {
+  local ident="${1}"
+  latest_version=$(curl -s -I -L -D - "https://sourceforge.net/projects/${ident}/files/latest/download?source=files" -o /dev/null \
+    | grep 'filename=' \
+    | sed 's/^.*filename="\([^"]*\)".*/\1/')
+  status=$?
+
+  if [ "${latest_version}" = "" ] && [ $status ]; then
+    echo "unknown"
+    return 1
+  fi
+
+  echo "${latest_version}"
+  return 0
+}
+
+# Get the project name from a pkg_source line
+sourceforge_project_name() {
+  local plan="${1}"
+  local ident=""
+  pushd "${CLONE_DIR}/${plan}" > /dev/null
+    ident=$(cat plan.sh \
+      | grep pkg_source \
+      | sed -E 's/^.*downloads.sourceforge\.net\/project\/([^\/]+)\/.*$/\1/')
+  popd > /dev/null
+
+  if [ "${ident}" = "" ]; then
+    echo "Sourceforge: unknown"
     return 1
   fi
 
@@ -189,13 +228,16 @@ clean_version_string() {
   #   debug_echo "Embedded variable ${variable}"
   # fi
 
-  # TODO: Switch for special plan rules.
+  if [ "${plan}" = "7zip" ]; then
+    plan="p7zip"
+  fi
 
   # Remove preceding 'v'
   clean_version="$(echo "${clean_version}" | sed 's/^v//')"
 
-  # Remove preceding plan name (eg: azure-cli)
+  # Remove preceding plan name (eg: azure-cli, 7zip)
   clean_version="$(echo "${clean_version}" | sed "s/^${plan}-//")"
+  clean_version="$(echo "${clean_version}" | sed "s/^${plan}_//")"
 
   # Remove preceding plan name without hyphens (eg: c-ares)
   local no_hyphen_name="$(echo "${plan}" | sed 's/-//')"
@@ -213,7 +255,7 @@ clean_version_string() {
 plan_version() {
   local version=""
   pushd "${CLONE_DIR}/${plan}" > /dev/null
-    version=$(cat plan.sh | grep "^pkg_version=" | sed 's/pkg_version=\"*\([^\"]*\)\"*/\1/g')
+    version=$(cat plan.sh | grep "^pkg_version=" | sed -E "s/pkg_version=[\"']?([^\"']+)[\"']?/\1/g")
   popd > /dev/null
 
   if [ "${version}" = "" ]; then
