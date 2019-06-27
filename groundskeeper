@@ -99,9 +99,13 @@ do_default_latest_version() {
     pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
   popd > /dev/null
 
+  if [ "${plan}" = "ansible" ]; then
+    do_ansible_latest_version
+    return $?
+  fi
+
   if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
     is_github=1
-    plan_count_github=$((plan_count_github + 1))
     repo_ident=$(github_repo_ident "${plan}")
     latest_version=$(github_latest_version "${repo_ident}")
     status=$?
@@ -121,11 +125,6 @@ do_default_latest_version() {
 # ```
 github_latest_version() {
   local ident="${1}"
-
-  if [ "${ident}" = "ansible/ansible" ]; then
-    # TODO: Parse ansible's page
-    return 0
-  fi
 
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
   local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
@@ -150,7 +149,6 @@ github_newest_release() {
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases")
 
   local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
-
 }
 
 # Get the github repo ident (owner/repo) from a pkg_source line
@@ -183,12 +181,25 @@ clean_version_string() {
   local version="${1}"
   local plan="${2:-}"
   local clean_version="${version}"
-  debug_echo "Cleaning version: ${version}"
+  debug_echo "Cleaning version: ${version} (${plan})"
+
+  # TODO: Variable substitution used in the pkg_version (eg: bash)
+  # if [[ "${version}" =~ "\${" ]]; then
+  #   local variable = "$(echo "${version}" | sed -E 's/\${([^}]+)}/\1/')"
+  #   debug_echo "Embedded variable ${variable}"
+  # fi
 
   # TODO: Switch for special plan rules.
 
-  # Remove preceding 'v' on versions
+  # Remove preceding 'v'
   clean_version="$(echo "${clean_version}" | sed 's/^v//')"
+
+  # Remove preceding plan name (eg: azure-cli)
+  clean_version="$(echo "${clean_version}" | sed "s/^${plan}-//")"
+
+  # Remove preceding plan name without hyphens (eg: c-ares)
+  local no_hyphen_name="$(echo "${plan}" | sed 's/-//')"
+  clean_version="$(echo "${clean_version}" | sed "s/^${no_hyphen_name}-//")"
 
   debug_echo "Cleaned version: ${clean_version}"
   echo "${clean_version}"
@@ -239,10 +250,11 @@ clone_repository || exit 1
 source habitat/components/plan-build/bin/public.bash
 source habitat/components/plan-build/bin/shared.bash
 
+source "$(dirname ${0})/_plan_specific.bash"
+
 get_all_plans
 
 plan_count_total=0
-plan_count_github=0
 
 for plan in "${ALL_PLANS[@]}"; do
   plan_count_total=$((plan_count_total + 1))
@@ -251,7 +263,7 @@ for plan in "${ALL_PLANS[@]}"; do
   pv=$(plan_version "${plan}")
   pv_status=$?
   echo "  Plan version  : ${pv}"
-  lv=$(clean_version_string "$(do_latest_version "${plan}")")
+  lv=$(clean_version_string "$(do_latest_version "${plan}")" "${plan}")
   lv_status=$?
   echo "  Latest version: ${lv}"
 
@@ -267,8 +279,5 @@ for plan in "${ALL_PLANS[@]}"; do
   fi
 done
 
-
 echo "[ Summary ] ------------------------------------------"
 echo "  Total plans:    ${plan_count_total}"
-# TODO: This is broken.. Probably something to do with subshells and arithmetic.
-echo "  Github sourced: ${plan_count_github}"
