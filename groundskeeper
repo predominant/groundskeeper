@@ -99,23 +99,42 @@ do_default_latest_version() {
     pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
   popd > /dev/null
 
-  if [ "${plan}" = "ansible" ]; then
-    do_ansible_latest_version
-    return $?
-  fi
+  case "${plan}" in
+    R)
+      do_r_latest_version
+      return $?
+      ;;
+    ansible)
+      do_ansible_latest_version
+      return $?
+      ;;
+    acl)
+      do_acl_latest_version
+      return $?
+      ;;
+    alex)
+      do_alex_latest_version
+      return $?
+      ;;
+    alsa-lib)
+      do_alsa_lib_latest_version
+      return $?
+      ;;
+    *)
+      if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
+        is_github=1
+        repo_ident=$(github_repo_ident "${plan}")
+        github_latest_version "${repo_ident}"
+        return $?
+      fi
 
-  if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
-    is_github=1
-    repo_ident=$(github_repo_ident "${plan}")
-    github_latest_version "${repo_ident}"
-    return $?
-  fi
-
-  if [[ "${pkg_source_line}" =~ downloads\.sourceforge\.net\/ ]]; then
-    project_name="$(sourceforge_project_name "${plan}")"
-    sourceforge_latest_version "${project_name}"
-    return $?
-  fi
+      if [[ "${pkg_source_line}" =~ downloads\.sourceforge\.net\/ ]]; then
+        project_name="$(sourceforge_project_name "${plan}")"
+        sourceforge_latest_version "${project_name}"
+        return $?
+      fi
+      ;;
+  esac
 }
 
 # Check 'github releases' for the latest version of a repo
@@ -179,7 +198,9 @@ sourceforge_latest_version() {
   local ident="${1}"
   latest_version=$(curl -s -I -L -D - "https://sourceforge.net/projects/${ident}/files/latest/download?source=files" -o /dev/null \
     | grep 'filename=' \
-    | sed 's/^.*filename="\([^"]*\)".*/\1/')
+    | sed 's/^.*filename="\([^"]*\)".*/\1/' \
+    | sed 's/\.tar\.bz2$//' \
+    | sed 's/_src_all$//')
   status=$?
 
   if [ "${latest_version}" = "" ] && [ $status ]; then
