@@ -98,20 +98,6 @@ Run groundskeeper:
 ./groundskeeper
 ```
 
-# Accuracy
-
-At time of writing, the success rate of detection is as follows:
-
-```
-[ Summary ] ------------------------------------------
-  Total plans:     645
-  Found versions:  111
-```
-
-~17%
-
-Better than nothing!
-
 # Authors
 
 * Graham Weldon <graham@grahamweldon.com>
