@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# groundskeeper
+# Version 0.0.1
+# Copyright 2019, Graham Weldon <graham@grahamweldon.com>
+
 CLONE_DEPTH=1
 CORE_PLANS_GIT_URI="git@github.com:habitat-sh/core-plans.git"
 CLONE_DIR="core-plans"

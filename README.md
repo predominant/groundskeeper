@@ -1,6 +1,6 @@
 # Groundskeeper
 
-A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat], and discover the latest version available for that plan.
+A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat]), and discover the latest version available for that plan.
 
 Output is compact, but simple to understand and read.
 
@@ -113,4 +113,4 @@ GNU General Public License v3.0
 See LICENSE file.
 
 [biome]: https://github.com/biome-sh
-[biome]: https://github.com/habitat-sh
+[habitat]: https://github.com/habitat-sh
