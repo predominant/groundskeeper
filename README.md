@@ -43,6 +43,23 @@ You can filter the output as necessary by piping the output through `grep`/`sed`
 ./groundskeeper | grep --line-buffered "^|"
 ```
 
+Want to get super fancy? Get a list of all plans with update candidates as JSON:
+
+```
+./groundskeeper | grep "^>" | jq -sRn '[input | split("\n") | .[] | split(" ")]'
+```
+
+You will get something like this:
+
+```
+[
+  [ "|", "7zip", "16.02", "16.02" ],
+  [ ">", "R", "3.5.0", "3.6.0" ],
+  [ "|", "acbuild", "0.4.0", "0.4.0" ],
+  ...
+]
+```
+
 # Requirements
 
 This was designed and developed on a MacOS machine. As such, certain tools and options might be Mac (or BSD) only.
