@@ -167,6 +167,7 @@ do_default_latest_version() {
 github_latest_version() {
   local ident="${1}"
 
+  # Some repositories use Releases correctly. Those are by far the simplest cases.
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
   local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
   if [ "${is_prerelease}" = "true" ]; then
@@ -176,6 +177,7 @@ github_latest_version() {
 
   local latest_version=$(echo "${latest_json}" | jq -r '.tag_name')
 
+  # If the releases are empty, we can also check tags as an alternative
   if [ "${latest_version}" = "" -o "${latest_version}" = "null" ]; then
     # TODO: Search for latest tag?
     echo "unknown"
