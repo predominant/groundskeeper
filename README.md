@@ -70,6 +70,12 @@ You can create a personal access token by visiting [your profile on Github](http
 
 These tokens are sent to requests to Github only. They require no permissions, and are simply used to ensure you don't hit API limitations by making anonymous requests.
 
+Run groundskeeper:
+
+```
+./groundskeeper
+```
+
 # Authors
 
 * Graham Weldon <graham@grahamweldon.com>
