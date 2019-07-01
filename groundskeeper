@@ -133,6 +133,14 @@ do_default_latest_version() {
         sourceforge_latest_version "${project_name}"
         return $?
       fi
+
+      if [[ "${pkg_source_line}" =~ archive\.apache\.org ]]; then
+        local apache_dir="${plan}"
+        if [ "${plan}" = "apr-util" ]; then
+          apache_dir="apr"
+        fi
+        apache_latest_version "${apache_dir}" "${plan}"
+      fi
       ;;
   esac
 }
@@ -228,6 +236,23 @@ sourceforge_project_name() {
   fi
 
   echo "${ident}"
+  return 0
+}
+
+# Get the latest version from the apache archive. Takes 2 arguments: Directory and PackageName
+apache_latest_version() {
+  local directory="${1}"
+  local plan="${2}"
+
+  echo "$(curl -s https://archive.apache.org/dist/${directory}/ \
+    | grep "${plan}-[0-9]" \
+    | grep -v -E "(asc|md5|sha1|sha256)" \
+    | sed -E 's/^.*(zip|bz2|gz|Z)">([^<]*)<\/a>.*$/\2/' \
+    | sed -E 's/^(.*)\.(tar\.bz2|tar\.gz|tar\.Z|zip)/\1/' \
+    | grep -v "win32" \
+    | sort \
+    | uniq \
+    | tail -1)"
   return 0
 }
 
