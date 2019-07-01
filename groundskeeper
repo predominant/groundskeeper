@@ -412,7 +412,7 @@ for plan in "${ALL_PLANS[@]}"; do
   lv=$(clean_version_string "$(do_latest_version "${plan}")" "${plan}")
   lv_status=$?
 
-  update_status=""
+  update_status="| "
   if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ] && [ "${lv}" != "unknown" ]; then
     update_status="> "
   fi

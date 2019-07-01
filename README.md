@@ -2,41 +2,46 @@
 
 A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat], and discover the latest version available for that plan.
 
-Output is verbose, but simple to understand and read:
+Output is compact, but simple to understand and read.
+
+Each line contains 3-4 fields.
+
+A plan with a detected possible update has a prefixed `> `.
+
+An up to date plan has a preceeding pipe `| `.
+
+The remaining fields are:
+
+1. plan name
+2. current plan version
+3. detected latest version
 
 ```
-7zip:
-  Plan version  : 16.02
-  Latest version: 16.02
-
-R:
-  Plan version  : 3.5.0
-  Latest version: 3.6.0
-  ^--- Maybe requires update
-
-acbuild:
-  Plan version  : 0.4.0
-  Latest version: 0.4.0
-
-acl:
-  Plan version  : 2.2.53
-  Latest version: 2.2.53
-
-alex:
-  Plan version  : 3.2.4
-  Latest version: 3.2.4
-
-alsa-lib:
-  Plan version  : 1.1.9
-  Latest version: 1.1.9
-
-ansible:
-  Plan version  : 2.7.11
-  Latest version: 2.8.1
-  ^--- Maybe requires update
+| 7zip 16.02 16.02
+> R 3.5.0 3.6.0
+| acbuild 0.4.0 0.4.0
+| acl 2.2.53 2.2.53
+| alex 3.2.4 3.2.4
+| alsa-lib 1.1.9 1.1.9
+> ansible 2.7.11 2.8.1
+| ant 1.10.6 unknown
+| apr-util 1.6.1 1.6.1
+> apr 1.6.5 1.7.0
+> artifactory-pro 6.11.0 6.11.1
+> artifactory 6.11.0 6.11.1
 ```
 
 This may not work for all plans consumed, but is designed to be improved over time to encompass as many cases as possible.
+
+You can filter the output as necessary by piping the output through `grep`/`sed`. Examples:
+
+```
+# Show all plans with possible updates
+./groundskeeper | grep --line-buffered "^>"
+
+# Show all plans that are up to date
+./groundskeeper | grep --line-buffered "^|"
+```
 
 # Requirements
 
