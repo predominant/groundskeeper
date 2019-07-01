@@ -156,6 +156,11 @@ do_default_latest_version() {
         savannah_gnu_latest_version "${plan}"
         return $?
       fi
+
+      if [[ "${pkg_source_line}" =~ ftp\.gnu\.org ]]; then
+        ftp_gnu_latest_version "${plan}"
+        return $?
+      fi
       ;;
   esac
 }
@@ -296,6 +301,18 @@ savannah_gnu_latest_version() {
   return 0
 }
 
+# Get the latest version from the GNU FTP server. Takes plan as argument
+ftp_gnu_latest_version() {
+  local plan="${1}"
+  echo "$(curl -s "https://ftp.gnu.org/gnu/${plan}/" \
+    | egrep  '\.tar\.(gz|bz2|xz|Z)"' \
+    | grep -v latest \
+    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
+    | sort --version-sort \
+    | tail -1)"
+  return 0
+}
+
 # Attempt to clean up a version string, takes the plan name as a parameter
 # in case it has a special / weird ruleset.
 # ```
@@ -383,9 +400,14 @@ source "$(dirname ${0})/_plan_specific.bash"
 get_all_plans
 
 plan_count_total=0
+detected_version_total=0
 
 for plan in "${ALL_PLANS[@]}"; do
   plan_count_total=$((plan_count_total + 1))
+
+  # Variable names are hard.
+  # pv = Plan Version
+  # lv = Latest Version
 
   echo "${plan}:"
   pv=$(plan_version "${plan}")
@@ -395,17 +417,24 @@ for plan in "${ALL_PLANS[@]}"; do
   lv_status=$?
   echo "  Latest version: ${lv}"
 
-  if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ]; then
+  if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ] && [ "${lv}" != "unknown" ]; then
     echo "  ^--- Maybe requires update"
+  fi
+
+  if [ ! -z "${lv}" ] && [ "${lv}" != "unknown" ]; then
+    detected_version_total=$((detected_version_total + 1))
   fi
 
   echo
 
   # TEMPORARY measure to prevent looping all plans during development.
-  if [ "${plan}" = "geos" ]; then
-    break
-  fi
+  # if [ "${plan}" = "cairo" ]; then
+  #   echo "Breaking"
+  #   break
+  # fi
 done
 
 echo "[ Summary ] ------------------------------------------"
-echo "  Total plans:    ${plan_count_total}"
+echo "  Total plans:     ${plan_count_total}"
+echo "  Found versions:  ${detected_version_total}"
+echo
