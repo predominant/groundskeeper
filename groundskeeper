@@ -405,27 +405,23 @@ detected_version_total=0
 for plan in "${ALL_PLANS[@]}"; do
   plan_count_total=$((plan_count_total + 1))
 
-  # Variable names are hard.
   # pv = Plan Version
-  # lv = Latest Version
-
-  echo "${plan}:"
   pv=$(plan_version "${plan}")
   pv_status=$?
-  echo "  Plan version  : ${pv}"
+  # lv = Latest Version
   lv=$(clean_version_string "$(do_latest_version "${plan}")" "${plan}")
   lv_status=$?
-  echo "  Latest version: ${lv}"
 
+  update_status=""
   if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ] && [ "${lv}" != "unknown" ]; then
-    echo "  ^--- Maybe requires update"
+    update_status="> "
   fi
+
+  echo "${update_status}${plan} ${pv} ${lv}"
 
   if [ ! -z "${lv}" ] && [ "${lv}" != "unknown" ]; then
     detected_version_total=$((detected_version_total + 1))
   fi
-
-  echo
 
   # TEMPORARY measure to prevent looping all plans during development.
   # if [ "${plan}" = "cairo" ]; then
