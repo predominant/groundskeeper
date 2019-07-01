@@ -1,3 +1,4 @@
+# ansible
 do_ansible_latest_version() {
   echo "$(curl -s https://releases.ansible.com/ansible/ \
     | grep 'href="ansible' \
@@ -14,6 +15,7 @@ do_ansible_latest_version() {
   return 0
 }
 
+# R
 do_r_latest_version() {
   echo "$(curl -s https://cran.r-project.org/src/base/VERSION-INFO.dcf \
     | grep "^Release: " \
@@ -21,6 +23,7 @@ do_r_latest_version() {
   return 0
 }
 
+# acl
 do_acl_latest_version() {
   echo "$(curl -s http://download.savannah.nongnu.org/releases/acl/ \
     | grep 'href="acl' \
@@ -32,6 +35,7 @@ do_acl_latest_version() {
   return 0    
 }
 
+# alex
 do_alex_latest_version() {
   echo "$(curl -s https://hackage.haskell.org/package/alex \
     | grep "<base" \
@@ -39,6 +43,7 @@ do_alex_latest_version() {
   return 0
 }
 
+# alsa-lib
 do_alsa_lib_latest_version() {
   echo "$(curl -s ftp://ftp.alsa-project.org/pub/lib/ \
     | grep "alsa-lib" \
