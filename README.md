@@ -57,6 +57,19 @@ Currently requires the following commands:
 * tail
 * head
 
+# Running
+
+Before running, please ensure you have the following environment variables set:
+
+| Name | Description |
+| --- | --- |
+| GITHUB_USERNAME | Your github username (Ex: `export GITHUB_USERNAME="predominant"`) |
+| GITHUB_TOKEN | Your github personal access token (Ex: `export GITHUB_TOKEN="1234451231351351355"`)
+
+You can create a personal access token by visiting [your profile on Github](https://github.com/settings/tokens).
+
+These tokens are sent to requests to Github only. They require no permissions, and are simply used to ensure you don't hit API limitations by making anonymous requests.
+
 # Authors
 
 * Graham Weldon <graham@grahamweldon.com>
