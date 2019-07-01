@@ -256,7 +256,7 @@ apache_latest_version() {
 
   echo "$(curl -s https://archive.apache.org/dist/${directory}/ \
     | grep "${plan}-[0-9]" \
-    | grep -v -E "(asc|md5|sha1|sha256)" \
+    | grep -v -E "\.(asc|md5|sha)" \
     | sed -E 's/^.*(zip|bz2|gz|Z)">([^<]*)<\/a>.*$/\2/' \
     | sed -E 's/^(.*)\.(tar\.bz2|tar\.gz|tar\.Z|zip)/\1/' \
     | grep -v "win32" \
