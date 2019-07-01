@@ -1,6 +1,6 @@
 # Groundskeeper
 
-A tool designed to parse through all the plan files in Biome (or Habitat), and discover the latest version available for that plan.
+A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat], and discover the latest version available for that plan.
 
 Output is verbose, but simple to understand and read:
 
@@ -64,7 +64,7 @@ Before running, please ensure you have the following environment variables set:
 | Name | Description |
 | --- | --- |
 | GITHUB_USERNAME | Your github username (Ex: `export GITHUB_USERNAME="predominant"`) |
-| GITHUB_TOKEN | Your github personal access token (Ex: `export GITHUB_TOKEN="1234451231351351355"`)
+| GITHUB_TOKEN | Your github personal access token (Ex: `export GITHUB_TOKEN="1234451231351351355"`) |
 
 You can create a personal access token by visiting [your profile on Github](https://github.com/settings/tokens).
 
@@ -89,3 +89,6 @@ Copyright 2019, Graham Weldon <graham@grahamweldon.com>
 GNU General Public License v3.0
 
 See LICENSE file.
+
+[biome]: https://github.com/biome-sh
+[biome]: https://github.com/habitat-sh
