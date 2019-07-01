@@ -151,6 +151,11 @@ do_default_latest_version() {
         gnome_latest_version "${plan}"
         return $?
       fi
+
+      if [[ "${pkg_source_line}" =~ download\.savannah\.gnu\.org ]]; then
+        savannah_gnu_latest_version "${plan}"
+        return $?
+      fi
       ;;
   esac
 }
@@ -273,6 +278,19 @@ gnome_latest_version() {
   local plan="${1}"
   echo "$(curl -s https://download.gnome.org/sources/${plan}/cache.json \
     | jq -r --arg PLAN_NAME "${plan}" '.[2][$PLAN_NAME] | .[]' \
+    | sort --version-sort \
+    | tail -1)"
+  return 0
+}
+
+# Get the latest version from the GNU Savannah server. Takes plan as argument
+savannah_gnu_latest_version() {
+  local plan="${1}"
+  echo "$(curl -s "https://download.savannah.gnu.org/releases/${plan}/" \
+    | grep "${plan}-[0-9]" \
+    | grep -v '\.sig">' \
+    | sed 's/^.*gz">\([^<]*\)<\/a>.*/\1/' \
+    | sed -E 's/\.(src\.)?tar\.gz//' \
     | sort --version-sort \
     | tail -1)"
   return 0
