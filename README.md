@@ -2,19 +2,14 @@
 
 A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat]), and discover the latest version available for that plan.
 
-Output is compact, but simple to understand and read.
+Output is compact, but simple to understand and read. Each line contains 3 fields. A plan with a detected possible update has a prefixed `> `. An up to date plan has a preceeding pipe `| `.
 
-Each line contains 3-4 fields.
+The fields are:
 
-A plan with a detected possible update has a prefixed `> `.
-
-An up to date plan has a preceeding pipe `| `.
-
-The remaining fields are:
-
-1. plan name
-2. current plan version
-3. detected latest version
+1. Status
+2. plan name
+3. current plan version
+4. detected latest version
 
 ```
 | 7zip 16.02 16.02
