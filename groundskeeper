@@ -124,6 +124,11 @@ do_default_latest_version() {
       do_alsa_lib_latest_version
       return $?
       ;;
+    ant)
+      # ant currently references github - Maybe that should change in its plan.sh
+      apache_latest_version apache-ant ant/source
+      return $?
+      ;;
     artifactory|artifactory-pro)
       do_artifactory_latest_version
       return $?
@@ -163,6 +168,21 @@ do_default_latest_version() {
 
       if [[ "${pkg_source_line}" =~ ftp\.gnu\.org ]]; then
         ftp_gnu_latest_version "${plan}"
+        return $?
+      fi
+
+      if [[ "${pkg_source_line}" =~ www\.x\.org ]]; then
+        local xorg_type="lib"
+        if [[ "${pkg_source_line}" =~ \/proto\/ ]]; then
+          xorg_type="proto"
+        fi
+        if [[ "${pkg_source_line}" =~ \/app\/ ]]; then
+          xorg_type="app"
+        fi
+        if [[ "${pkg_source_line}" =~ \/xcb\/ ]]; then
+          xorg_type="xcb"
+        fi
+        xorg_latest_version "${plan}" "${xorg_type}"
         return $?
       fi
       ;;
@@ -267,15 +287,17 @@ sourceforge_project_name() {
 
 # Get the latest version from the apache archive. Takes 2 arguments: Directory and PackageName
 apache_latest_version() {
-  local directory="${1}"
-  local plan="${2}"
+  local plan="${1}"
+  local directory="${2:-1}"
 
-  echo "$(curl -s https://archive.apache.org/dist/${directory}/ \
+  echo "$(curl -s "https://archive.apache.org/dist/${directory}/source/" \
     | grep "${plan}-[0-9]" \
     | grep -v -E "\.(asc|md5|sha)" \
-    | sed -E 's/^.*(zip|bz2|gz|Z)">([^<]*)<\/a>.*$/\2/' \
-    | sed -E 's/^(.*)\.(tar\.bz2|tar\.gz|tar\.Z|zip)/\1/' \
+    | sed -E 's/^.*(zip|bz2|gz|xz|Z|7z)">([^<]*)<\/a>.*$/\2/' \
+    | sed -E 's/^(.*)\.(tar\.(bz2|gz|xz|Z)|zip|7z)/\1/' \
+    | grep -v "RC" \
     | grep -v "win32" \
+    | sed 's/-src$//' \
     | sort --version-sort \
     | uniq \
     | tail -1)"
@@ -298,7 +320,7 @@ savannah_gnu_latest_version() {
   echo "$(curl -s "https://download.savannah.gnu.org/releases/${plan}/" \
     | grep "${plan}-[0-9]" \
     | grep -v '\.sig">' \
-    | sed 's/^.*gz">\([^<]*\)<\/a>.*/\1/' \
+    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
     | sed -E 's/\.(src\.)?tar\.gz//' \
     | sort --version-sort \
     | tail -1)"
@@ -309,11 +331,37 @@ savannah_gnu_latest_version() {
 ftp_gnu_latest_version() {
   local plan="${1}"
   echo "$(curl -s "https://ftp.gnu.org/gnu/${plan}/" \
-    | egrep  '\.tar\.(gz|bz2|xz|Z)"' \
+    | egrep '\.tar\.(gz|bz2|xz|Z)"' \
     | grep -v latest \
     | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
     | sort --version-sort \
     | tail -1)"
+  return 0
+}
+
+xorg_latest_version() {
+  local plan="${1}"
+  local xorg_type="${2:-lib}"
+
+  local xorg_cache="${cache_xorg_lib}"
+  case "${xorg_type}" in
+    app)
+      xorg_cache="${cache_xorg_app}"
+      ;;
+    proto)
+      xorg_cache="${cache_xorg_proto}"
+      ;;
+    xcb)
+      xorg_cache="${cache_xorg_xcb}"
+      ;;
+  esac
+
+  echo "${xorg_cache}" \
+    | grep -i "${plan}" \
+    | grep -v '\.sig"' \
+    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
+    | sort --version-sort \
+    | tail -1
   return 0
 }
 
@@ -329,6 +377,10 @@ clean_version_string() {
   local clean_version="${version}"
   debug_echo "Cleaning version: ${version} (${plan})"
 
+  # lowercase the string - BSD sed doesn't do case insensitive matching.
+  plan="$(echo "${plan}" | tr '[:upper:]' '[:lower:]')"
+  clean_version="$(echo "${clean_version}" | tr '[:upper:]' '[:lower:]')"
+
   # TODO: Variable substitution used in the pkg_version (eg: bash)
   # if [[ "${version}" =~ "\${" ]]; then
   #   local variable = "$(echo "${version}" | sed -E 's/\${([^}]+)}/\1/')"
@@ -342,13 +394,13 @@ clean_version_string() {
   # Remove preceding 'v'
   clean_version="$(echo "${clean_version}" | sed 's/^v//')"
 
-  # Remove preceding plan name (eg: azure-cli, 7zip)
-  clean_version="$(echo "${clean_version}" | sed "s/^${plan}-//")"
-  clean_version="$(echo "${clean_version}" | sed "s/^${plan}_//")"
+  # Remove preceding plan name (eg: azure-cli, 7zip), and also
+  # checking for apache- prefix
+  clean_version="$(echo "${clean_version}" | sed -E "s/^(apache-)?${plan}[-_]//")"
 
   # Remove preceding plan name without hyphens (eg: c-ares)
   local no_hyphen_name="$(echo "${plan}" | sed 's/-//')"
-  clean_version="$(echo "${clean_version}" | sed "s/^${no_hyphen_name}-//")"
+  clean_version="$(echo "${clean_version}" | sed -E "s/^(apache-)?${no_hyphen_name}[-_]//")"
 
   debug_echo "Cleaned version: ${clean_version}"
   echo "${clean_version}"
@@ -401,6 +453,12 @@ source habitat/components/plan-build/bin/shared.bash
 
 source "$(dirname ${0})/_plan_specific.bash"
 
+# Cache the x.org lists, because they're all on the same page.
+cache_xorg_lib="$(curl -s https://www.x.org/releases/individual/lib/)"
+cache_xorg_app="$(curl -s https://www.x.org/releases/individual/app/)"
+cache_xorg_proto="$(curl -s https://www.x.org/releases/individual/proto/)"
+cache_xorg_xcb="$(curl -s https://www.x.org/releases/individual/xcb/)"
+
 get_all_plans
 
 plan_count_total=0
@@ -428,7 +486,7 @@ for plan in "${ALL_PLANS[@]}"; do
   fi
 
   # TEMPORARY measure to prevent looping all plans during development.
-  # if [ "${plan}" = "cairo" ]; then
+  # if [ "${plan}" = "bats" ]; then
   #   echo "Breaking"
   #   break
   # fi
