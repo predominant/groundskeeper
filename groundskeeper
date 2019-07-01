@@ -120,6 +120,10 @@ do_default_latest_version() {
       do_alsa_lib_latest_version
       return $?
       ;;
+    artifactory|artifactory-pro)
+      do_artifactory_latest_version
+      return $?
+      ;;
     *)
       if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
         is_github=1
@@ -140,6 +144,12 @@ do_default_latest_version() {
           apache_dir="apr"
         fi
         apache_latest_version "${apache_dir}" "${plan}"
+        return $?
+      fi
+
+      if [[ "${pkg_source_line}" =~ download\.gnome\.org ]]; then
+        gnome_latest_version "${plan}"
+        return $?
       fi
       ;;
   esac
@@ -250,8 +260,18 @@ apache_latest_version() {
     | sed -E 's/^.*(zip|bz2|gz|Z)">([^<]*)<\/a>.*$/\2/' \
     | sed -E 's/^(.*)\.(tar\.bz2|tar\.gz|tar\.Z|zip)/\1/' \
     | grep -v "win32" \
-    | sort \
+    | sort --version-sort \
     | uniq \
+    | tail -1)"
+  return 0
+}
+
+# Get the latest version from downloads.gnome.org. Takes plan as argument
+gnome_latest_version() {
+  local plan="${1}"
+  echo "$(curl -s https://download.gnome.org/sources/${plan}/cache.json \
+    | jq -r --arg PLAN_NAME "${plan}" '.[2][$PLAN_NAME] | .[]' \
+    | sort --version-sort \
     | tail -1)"
   return 0
 }

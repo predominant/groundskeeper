@@ -54,3 +54,14 @@ do_alsa_lib_latest_version() {
     | tail -1)"
   return 0
 }
+
+# artifactory and artifactory-pro
+do_artifactory_latest_version() {
+  echo "$(curl -s https://bintray.com/jfrog/artifactory/ \
+    | grep 'Version:' \
+    | sed -E 's/.*Version: ([0-9\.]+).*/\1/' \
+    | sort \
+    | uniq \
+    | tail -1)"
+  return 0
+}
