@@ -1,7 +1,10 @@
 ## [Unreleased]
+
+## [0.0.3]
 ### Added
 - x.org version checking
 - Add filters for xz/7z file extensions
+- postgres version checking
 
 ### Changed
 - Check for `apache-` in front of plan names
@@ -26,3 +29,4 @@ Accuracy at 17% (111/645).
 
 [Unreleased]: https://github.com/predominant/groundskeeper/compare/0.0.1...HEAD
 [0.0.1]: https://github.com/predominant/groudskeeper/releases/tag/0.0.1
+[0.0.3]: https://github.com/predominant/groudskeeper/releases/tag/0.0.3
