@@ -1,5 +1,21 @@
 ## [Unreleased]
+### Added
+- x.org version checking
+- Add filters for xz/7z file extensions
 
+### Changed
+- Check for `apache-` in front of plan names
+- force `ant` to use apache latest version check
+
+### Known bugs
+- Returns a HTML string
+  - freetype
+  - libpipeline
+  - lzip
+- `gtk` causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
+
+### Notes
+Accuracy at 23% (151/645).
 
 ## [0.0.1]
 ### Added

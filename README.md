@@ -2,7 +2,7 @@
 
 A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat]), and discover the latest version available for that plan.
 
-Output is compact, but simple to understand and read. Each line contains 3 fields. A plan with a detected possible update has a prefixed `> `. An up to date plan has a preceeding pipe `| `.
+Output is compact, but simple to understand and read. Each line contains 3 fields. A plan with a detected possible update has a prefixed `> `. An up to date plan has a preceeding pipe `| `. Errors or inability to check latest version are prefixed with `- `
 
 The fields are:
 
@@ -93,6 +93,10 @@ Run groundskeeper:
 ./groundskeeper
 ```
 
+# Coverage
+
+Coverage of plans and sample output can be found in [this Github Gist][gist].
+
 # Authors
 
 * Graham Weldon <graham@grahamweldon.com>
@@ -109,3 +113,4 @@ See LICENSE file.
 
 [biome]: https://github.com/biome-sh
 [habitat]: https://github.com/habitat-sh
+[gist]: https://gist.github.com/predominant/648d5a19d316677e5e3e39620bea5b41
