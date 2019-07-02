@@ -120,6 +120,12 @@ do_default_latest_version() {
       return $?
       ;;
     *)
+      if [[ "${plan}" =~ ^postgresql ]]; then
+        postgresql_code="$(echo "${plan}" | sed 's/postgresql//')"
+        do_postgresql_latest_version "${postgresql_code}"
+        return $?
+      fi
+
       if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
         is_github=1
         repo_ident=$(github_repo_ident "${plan}")

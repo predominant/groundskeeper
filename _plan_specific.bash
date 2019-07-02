@@ -74,3 +74,26 @@ do_lsof_latest_version() {
     | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/')"
   return 0
 }
+
+# Takes a postgresql short version code (Eg: "96", "95")
+do_postgresql_latest_version() {
+  local code="${1}"
+  local version_prefix=""
+  if [ "${code}" = "11" ]; then
+    version_prefix="11."
+  elif [ "${code}" = "-client" ]; then
+    version_prefix=""
+  else
+    # 96 => 9.6.
+    # 95 => 9.5.
+    version_prefix="$(echo "${code}" | sed -E 's/(.)/\1./g')"
+  fi
+  echo "$(curl -s "https://ftp.postgresql.org/pub/source/" \
+    | grep 'class="d"' \
+    | sed -E 's/^.*<a href[^>]+>v([^<]+)<.*$/\1/' \
+    | grep -v '\.\.' \
+    | grep "^${version_prefix}" \
+    | sort --version-sort \
+    | tail -1)"
+  return 0
+}
