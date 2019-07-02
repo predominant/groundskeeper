@@ -106,13 +106,17 @@ do_default_latest_version() {
       apache_latest_version apache-ant ant/source
       return $?
       ;;
+    artifactory|artifactory-pro)
+      do_artifactory_latest_version
+      return $?
+      ;;
     bash-static)
       # bash-static sources bash
       do_default_latest_version "bash"
       return $?
       ;;
-    artifactory|artifactory-pro)
-      do_artifactory_latest_version
+    lsof)
+      do_lsof_latest_version
       return $?
       ;;
     *)

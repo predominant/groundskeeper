@@ -65,3 +65,12 @@ do_artifactory_latest_version() {
     | tail -1)"
   return 0
 }
+
+# lsof
+do_lsof_latest_version() {
+  echo "$(curl -s "https://www.mirrorservice.org/sites/lsof.itap.purdue.edu/pub/tools/unix/lsof/" \
+    | egrep 'lsof_[0-9\.]+\.tar\.bz2' \
+    | grep -v ".sig" \
+    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/')"
+  return 0
+}
