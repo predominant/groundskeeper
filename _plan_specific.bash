@@ -77,12 +77,10 @@ do_lsof_latest_version() {
 
 # Takes a postgresql short version code (Eg: "96", "95")
 do_postgresql_latest_version() {
-  local code="${1}"
+  local code="$(echo "${1}" | sed 's/-client//')"
   local version_prefix=""
   if [ "${code}" = "11" ]; then
     version_prefix="11."
-  elif [ "${code}" = "-client" ]; then
-    version_prefix=""
   else
     # 96 => 9.6.
     # 95 => 9.5.
@@ -93,6 +91,7 @@ do_postgresql_latest_version() {
     | sed -E 's/^.*<a href[^>]+>v([^<]+)<.*$/\1/' \
     | grep -v '\.\.' \
     | grep "^${version_prefix}" \
+    | grep -v 'beta' \
     | sort --version-sort \
     | tail -1)"
   return 0

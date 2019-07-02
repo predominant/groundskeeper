@@ -15,7 +15,7 @@
 - `gtk` causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
 
 ### Notes
-Accuracy at 23% (151/645).
+Accuracy at 25% (161/637).
 
 ## [0.0.1]
 ### Added
