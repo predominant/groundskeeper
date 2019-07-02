@@ -23,13 +23,11 @@ debug_echo() {
 prepare_dependencies() {
   echo "[ Habitat ] ------------------------------------------"
   if [ ! -d habitat ]; then
-    git clone --depth 1 git@github.com:habitat-sh/habitat.git habitat
+    git clone --depth "${CLONE_DEPTH}" git@github.com:habitat-sh/habitat.git habitat
     return $?
   fi
   update_repository habitat
-  status=$?
-  echo
-  return ${status}
+  return $?
 }
 
 # Clone the core-plans repository
@@ -40,9 +38,7 @@ clone_repository() {
     return $?
   fi
   update_repository "${CLONE_DIR}"
-  status=$?
-  echo
-  return ${status}
+  return $?
 }
 
 # Update the repository in the specified directory (must already exist)
@@ -110,6 +106,11 @@ do_default_latest_version() {
       apache_latest_version apache-ant ant/source
       return $?
       ;;
+    bash-static)
+      # bash-static sources bash
+      do_default_latest_version "bash"
+      return $?
+      ;;
     artifactory|artifactory-pro)
       do_artifactory_latest_version
       return $?
@@ -133,7 +134,7 @@ do_default_latest_version() {
         if [ "${plan}" = "apr-util" ]; then
           apache_dir="apr"
         fi
-        apache_latest_version "${apache_dir}" "${plan}"
+        apache_latest_version "${plan}" "${apache_dir}"
         return $?
       fi
 
@@ -271,11 +272,11 @@ apache_latest_version() {
   local plan="${1}"
   local directory="${2:-1}"
 
-  echo "$(curl -s "https://archive.apache.org/dist/${directory}/source/" \
+  echo "$(curl -s "https://archive.apache.org/dist/${directory}/" \
     | grep "${plan}-[0-9]" \
     | grep -v -E "\.(asc|md5|sha)" \
-    | sed -E 's/^.*(zip|bz2|gz|xz|Z|7z)">([^<]*)<\/a>.*$/\2/' \
-    | sed -E 's/^(.*)\.(tar\.(bz2|gz|xz|Z)|zip|7z)/\1/' \
+    | sed -E 's/^.*(zip|bz2|gz|xz|Z|7z|lz)">([^<]*)<\/a>.*$/\2/' \
+    | sed -E 's/^(.*)\.(tar\.(bz2|gz|xz|Z|lz)|zip|7z)/\1/' \
     | grep -v "RC" \
     | grep -v "win32" \
     | sed 's/-src$//' \
@@ -301,8 +302,10 @@ savannah_gnu_latest_version() {
   echo "$(curl -s "https://download.savannah.gnu.org/releases/${plan}/" \
     | grep "${plan}-[0-9]" \
     | grep -v '\.sig">' \
-    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
+    | sed -E 's/^.*(gz|bz2|xz|Z|lz)">([^<]*)\.tar\.(gz|bz2|xz|Z|lz)<\/a>.*/\2/' \
     | sed -E 's/\.(src\.)?tar\.gz//' \
+    | egrep -v '(rc[0-9]+|pre)' \
+    | egrep -v '\-w32\.zip' \
     | sort --version-sort \
     | tail -1)"
   return 0
@@ -312,9 +315,10 @@ savannah_gnu_latest_version() {
 ftp_gnu_latest_version() {
   local plan="${1}"
   echo "$(curl -s "https://ftp.gnu.org/gnu/${plan}/" \
-    | egrep '\.tar\.(gz|bz2|xz|Z)"' \
+    | grep "${plan}" \
+    | egrep '\.tar\.(gz|bz2|xz|Z|lz)"' \
     | grep -v latest \
-    | sed -E 's/^.*(gz|bz2|xz|Z)">([^<]*)\.tar\.(gz|bz2|xz|Z)<\/a>.*/\2/' \
+    | sed -E 's/^.*(gz|bz2|xz|Z|lz)">([^<]*)\.tar\.(gz|bz2|xz|Z|lz)<\/a>.*/\2/' \
     | sort --version-sort \
     | tail -1)"
   return 0
@@ -427,7 +431,9 @@ check_environment() {
 
 check_environment
 prepare_dependencies || exit 1
+echo
 clone_repository || exit 1
+echo
 
 source habitat/components/plan-build/bin/public.bash
 source habitat/components/plan-build/bin/shared.bash
@@ -446,7 +452,16 @@ plan_count_total=0
 detected_version_total=0
 
 for plan in "${ALL_PLANS[@]}"; do
+  if [[ "${plan}" =~ ^scaffolding ]]; then
+    # Skip scaffolding plans.
+    continue
+  fi
+
   plan_count_total=$((plan_count_total + 1))
+
+  if [ ${DEBUG} -eq 1 ]; then
+    echo
+  fi
 
   # pv = Plan Version
   pv=$(plan_version "${plan}")
@@ -456,15 +471,16 @@ for plan in "${ALL_PLANS[@]}"; do
   lv_status=$?
 
   update_status="| "
-  if [ ${lv_status} -eq 0 ] && [ ! -z "${lv:-}" ] && [ "${pv}" != "${lv}" ] && [ "${lv}" != "unknown" ]; then
+  if [ "${lv}" = "unknown" ] || [ "${lv}" = "" ] || [ -z "${lv}" ]; then
+    update_status="- "
+  else
+    detected_version_total=$((detected_version_total + 1))
+  fi
+  if [ ${lv_status} -eq 0 ] && [ "${pv}" != "${lv}" ]; then
     update_status="> "
   fi
 
   echo "${update_status}${plan} ${pv} ${lv}"
-
-  if [ ! -z "${lv}" ] && [ "${lv}" != "unknown" ]; then
-    detected_version_total=$((detected_version_total + 1))
-  fi
 
   # TEMPORARY measure to prevent looping all plans during development.
   # if [ "${plan}" = "bats" ]; then
@@ -473,6 +489,7 @@ for plan in "${ALL_PLANS[@]}"; do
   # fi
 done
 
+echo
 echo "[ Summary ] ------------------------------------------"
 echo "  Total plans:     ${plan_count_total}"
 echo "  Found versions:  ${detected_version_total}"
