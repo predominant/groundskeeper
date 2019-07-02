@@ -471,13 +471,13 @@ for plan in "${ALL_PLANS[@]}"; do
   lv_status=$?
 
   update_status="| "
+  if [ ${lv_status} -eq 0 ] && [ "${pv}" != "${lv}" ]; then
+    update_status="> "
+  fi
   if [ "${lv}" = "unknown" ] || [ "${lv}" = "" ] || [ -z "${lv}" ]; then
     update_status="- "
   else
     detected_version_total=$((detected_version_total + 1))
-  fi
-  if [ ${lv_status} -eq 0 ] && [ "${pv}" != "${lv}" ]; then
-    update_status="> "
   fi
 
   echo "${update_status}${plan} ${pv} ${lv}"
