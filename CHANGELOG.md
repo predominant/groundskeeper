@@ -1,4 +1,17 @@
 ## [Unreleased]
+### Added
+- Hashicorp release json parsing
+
+### Notes
+Accuracy at 26% (166/636).
+
+### Known bugs
+- Returns a HTML string
+  - freetype
+  - kafka
+  - libpipeline
+  - lzip
+- `gtk` causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
 
 ## [0.0.3]
 ### Added
