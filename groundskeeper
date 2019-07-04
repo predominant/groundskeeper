@@ -250,7 +250,7 @@ sourceforge_latest_version() {
   latest_version=$(curl -s -I -L -D - "https://sourceforge.net/projects/${ident}/files/latest/download?source=files" -o /dev/null \
     | grep 'filename=' \
     | sed 's/^.*filename="\([^"]*\)".*/\1/' \
-    | sed 's/\.tar\.bz2$//' \
+    | sed -E 's/\.(tar\.(bz2|gz|xz|Z|lz)|zip|7z)$//' \
     | sed 's/_src_all$//')
   status=$?
 
@@ -412,6 +412,9 @@ clean_version_string() {
   # Remove preceding plan name without hyphens (eg: c-ares)
   local no_hyphen_name="$(echo "${plan}" | sed 's/-//')"
   clean_version="$(echo "${clean_version}" | sed -E "s/^(apache-)?${no_hyphen_name}[-_]//")"
+
+  # c-ares comes back with underscores instead of periods.
+  clean_version="$(echo "${clean_version}" | sed -E "s/^([0-9]+)_([0-9]+)_([0-9]+)/1.\2.\3/")"
 
   debug_echo "Cleaned version: ${clean_version}"
   echo "${clean_version}"

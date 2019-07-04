@@ -1,6 +1,10 @@
 ## [Unreleased]
 ### Added
 - Hashicorp release json parsing
+- c-ares version string parsing
+
+### Changed
+- Sourceforge now supports all common compression formats
 
 ### Notes
 Accuracy at 26% (166/636).
@@ -11,7 +15,7 @@ Accuracy at 26% (166/636).
   - kafka
   - libpipeline
   - lzip
-- `gtk` causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
+- `gtk` (?) causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
 
 ## [0.0.3]
 ### Added
