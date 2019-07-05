@@ -11,7 +11,7 @@
 - Github ident parsing now handles embedded pkg_name
 
 ### Notes
-Accuracy at 29% (186/636).
+Accuracy at 29% (187/636).
 
 ### Known bugs
 - Returns a HTML string
