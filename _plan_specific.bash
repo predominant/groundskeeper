@@ -1,3 +1,11 @@
+# R
+do_r_latest_version() {
+  echo "$(curl -s https://cran.r-project.org/src/base/VERSION-INFO.dcf \
+    | grep "^Release: " \
+    | awk '{print $2}')"
+  return 0
+}
+
 # ansible
 do_ansible_latest_version() {
   echo "$(curl -s https://releases.ansible.com/ansible/ \
@@ -12,14 +20,6 @@ do_ansible_latest_version() {
     | sed -E 's/\.tar\.(gz|bz2|xz)//' \
     | tail -1 \
     | awk '{print $1}')"
-  return 0
-}
-
-# R
-do_r_latest_version() {
-  echo "$(curl -s https://cran.r-project.org/src/base/VERSION-INFO.dcf \
-    | grep "^Release: " \
-    | awk '{print $2}')"
   return 0
 }
 
@@ -64,6 +64,18 @@ do_artifactory_latest_version() {
     | uniq \
     | tail -1)"
   return 0
+}
+
+do_bash_current_version() {
+  local plan_source="$(cat plan.sh)"
+  _base_version="$(echo "${plan_source}" \
+    | grep '^_base_version=' \
+    | awk -F'=' '{print $2}')"
+  local version="$(echo "${plan_source}" \
+    | grep '^pkg_version=' \
+    | awk -F'=' '{print $2}' \
+    | sed -E "s/\\\$\{_base_version\}/${_base_version}/")"
+  echo "${version}"
 }
 
 # lsof

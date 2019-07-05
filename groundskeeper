@@ -82,13 +82,39 @@ do_default_latest_version() {
   local plan="${1}"
   local is_github=0
   local pkg_source_line=""
+  local pkg_source=""
 
   pushd "${CLONE_DIR}/${plan}" > /dev/null
-    pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
+    pkg_source="$(cat plan.sh)"
+
+    # Replace _distname or pkg_distname
+    local distname="$(echo "${pkg_source}" \
+      | egrep '^(pkg)?_distname=' \
+      | awk -F'=' '{print $2}' \
+      | tr -d '"{}')"
+    distname="$(echo "${distname}" \
+      | sed -E "s/\\\$pkg_name/${plan}/g")"
+    pkg_source="$(echo "${pkg_source}" \
+      | sed -E "s/\\\$\{?(pkg)?_distname\}?/${distname}/g")"
+
+    local url_base="$(echo "${pkg_source}" \
+      | egrep '^_url_base=' \
+      | awk -F'=' '{print $2}' \
+      | tr -d '"{}')"
+    # This uses '!' as the separator for sed, to avoid url:// screwing things up.
+    pkg_source="$(echo "${pkg_source}" \
+      | sed -E "s!\\\$\{?_url_base\}?!${url_base}!g")"
+
+    pkg_source_line="$(echo "${pkg_source}" \
+      | grep '^pkg_source=')"
+
     # Replace idents that have a ${pkg_name} or $pkg_name embedded in them
+    pkg_source_line="$(echo "${pkg_source_line}" \
+      | sed -E "s/\\\$\{?pkg_name\}?/${plan}/g")"
+
     pkg_source_line="$(echo "${pkg_source_line}" | sed -E "s/\\\$\{?pkg_name\}?/${plan}/g")"
+
   popd > /dev/null
-  debug_echo "pkg_source_line='${pkg_source_line}'"
 
   case "${plan}" in
     R)
@@ -366,7 +392,8 @@ ftp_gnu_latest_version() {
   echo "$(curl -s "https://ftp.gnu.org/gnu/${plan}/" \
     | grep "${plan}" \
     | egrep '\.tar\.(gz|bz2|xz|Z|lz)"' \
-    | grep -v latest \
+    | egrep -v 'latest|rc[0-9]+|beta|alpha' \
+    | grep -v 'doc-' \
     | sed -E 's/^.*(gz|bz2|xz|Z|lz)">([^<]*)\.tar\.(gz|bz2|xz|Z|lz)<\/a>.*/\2/' \
     | sort --version-sort \
     | tail -1)"
@@ -464,7 +491,14 @@ clean_version_string() {
 plan_version() {
   local version=""
   pushd "${CLONE_DIR}/${plan}" > /dev/null
-    version=$(cat plan.sh | grep "^pkg_version=" | sed -E "s/pkg_version=[\"']?([^\"']+)[\"']?/\1/g")
+    case "${plan}" in
+      bash)
+        version="$(do_bash_current_version)"
+        ;;
+      *)
+        version="$(cat plan.sh | grep "^pkg_version=" | awk -F'=' '{print $2}' | tr -d '"{}')"
+        ;;
+    esac
   popd > /dev/null
 
   if [ "${version}" = "" ]; then

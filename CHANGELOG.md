@@ -1,10 +1,21 @@
 ## [Unreleased]
 ### Changed
-- Applied $pkg_name substitution to all pkg_source lines
+- Applied `$pkg_name` substitution to all pkg_source lines
+- Applied `$_url_base` transformations
 - Added more formats for sourceforge URIs
 
 ### Notes
-Accuracy at 38% (239/636).
+Accuracy at 38% (242/636).
+
+### Known bugs
+- Returns a HTML string
+  - freetype
+  - kafka
+  - libpipeline
+  - lzip
+  - spark
+- `gtk` (?) causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
+- Boost returns a lower version as latest
 
 ## [0.0.4]
 ### Added
