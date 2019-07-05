@@ -10,6 +10,8 @@ STUDIO_TYPE="groundskeeper"
 DEBUG=${DEBUG:-0}
 ALL_PLANS=()
 
+
+
 debug_echo() {
   if [ ${DEBUG} -eq 0 ]; then
     return 0
@@ -229,6 +231,7 @@ github_latest_version() {
   fi
 
   local latest_version=$(echo "${latest_json}" | jq -r '.tag_name')
+  debug_echo "... ${latest_version}"
 
   # If the releases are empty, we can also check tags as an alternative
   if [ "${latest_version}" = "" -o "${latest_version}" = "null" ]; then
@@ -508,7 +511,11 @@ cache_xorg_app="$(curl -s https://www.x.org/releases/individual/app/)"
 cache_xorg_proto="$(curl -s https://www.x.org/releases/individual/proto/)"
 cache_xorg_xcb="$(curl -s https://www.x.org/releases/individual/xcb/)"
 
-get_all_plans
+if [ -z $1 ]; then
+  get_all_plans
+else
+  ALL_PLANS=("${1}")
+fi
 
 plan_count_total=0
 detected_version_total=0
