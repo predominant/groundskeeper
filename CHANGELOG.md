@@ -1,4 +1,7 @@
 ## [Unreleased]
+
+
+## [0.0.4]
 ### Added
 - Hashicorp release json parsing
 - c-ares version string parsing
@@ -12,7 +15,7 @@
 - Github ident parsing now handles embedded pkg_name
 
 ### Notes
-Accuracy at 29% (187/636).
+Accuracy at 35% (225/636).
 
 ### Known bugs
 - Returns a HTML string
