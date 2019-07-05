@@ -85,7 +85,10 @@ do_default_latest_version() {
 
   pushd "${CLONE_DIR}/${plan}" > /dev/null
     pkg_source_line=$(cat plan.sh | grep "^pkg_source=")
+    # Replace idents that have a ${pkg_name} or $pkg_name embedded in them
+    pkg_source_line="$(echo "${pkg_source_line}" | sed -E "s/\\\$\{?pkg_name\}?/${plan}/g")"
   popd > /dev/null
+  debug_echo "pkg_source_line='${pkg_source_line}'"
 
   case "${plan}" in
     R)
@@ -220,6 +223,7 @@ do_default_latest_version() {
 # ```
 github_latest_version() {
   local ident="${1}"
+  debug_echo "github_latest_version(${ident})"
 
   # Some repositories use Releases correctly. Those are by far the simplest cases.
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
@@ -230,7 +234,7 @@ github_latest_version() {
   fi
 
   local latest_version=$(echo "${latest_json}" | jq -r '.tag_name')
-  debug_echo "... ${latest_version}"
+  debug_echo "Latest version from JSON: ${latest_version}"
 
   # If the releases are empty, we can also check tags as an alternative
   if [ "${latest_version}" = "" -o "${latest_version}" = "null" ]; then
@@ -260,12 +264,8 @@ github_repo_ident() {
       | egrep "github\.com\/.*\/(archive|releases)\/" \
       | sed -E 's/^.*github\.com\/([^\/]+)\/([^\/]+)\/.*/\1\/\2/')
     #                             ^ org     ^ repo
-
     # Replace idents that have a ${pkg_name} or $pkg_name embedded in them
-    if [[ "${ident}" =~ ^.*\/\$\{pkg_name\} ]]; then
-      ident="$(echo "${ident}" | sed "s/\${pkg_name}/${plan}/")"
-      ident="$(echo "${ident}" | sed "s/\$pkg_name/${plan}/")"
-    fi
+    ident="$(echo "${ident}" | sed -E "s/\\\$\{?pkg_name\}?/${plan}/g")"
   popd > /dev/null
 
   if [ "${ident}" = "" ]; then
@@ -285,6 +285,7 @@ sourceforge_latest_version() {
     | sed -E 's/\.(tar\.(bz2|gz|xz|Z|lz)|zip|7z)$//' \
     | sed 's/_src_all$//')
   status=$?
+  debug_echo "Sourceforge latest version (${ident}): ${latest_version}"
 
   if [ "${latest_version}" = "" ] && [ $status ]; then
     echo "unknown"
@@ -299,10 +300,11 @@ sourceforge_latest_version() {
 sourceforge_project_name() {
   local plan="${1}"
   local ident=""
+
   pushd "${CLONE_DIR}/${plan}" > /dev/null
     ident=$(cat plan.sh \
       | grep pkg_source \
-      | sed -E 's/^.*downloads.sourceforge\.net\/project\/([^\/]+)\/.*$/\1/')
+      | sed -E 's/^.*downloads.sourceforge\.net\/(project|sourceforge)\/([^\/]+)\/.*$/\2/')
   popd > /dev/null
 
   if [ "${ident}" = "" ]; then
@@ -418,7 +420,6 @@ clean_version_string() {
   local version="${1}"
   local plan="${2:-}"
   local clean_version="${version}"
-  debug_echo "Cleaning version: ${version} (${plan})"
 
   # lowercase the string - BSD sed doesn't do case insensitive matching.
   plan="$(echo "${plan}" | tr '[:upper:]' '[:lower:]')"
@@ -451,7 +452,7 @@ clean_version_string() {
   # c-ares comes back with underscores instead of periods.
   clean_version="$(echo "${clean_version}" | sed -E "s/^([0-9]+)_([0-9]+)_([0-9]+)/1.\2.\3/")"
 
-  debug_echo "Cleaned version: ${clean_version}"
+  debug_echo "Cleaned version (${plan}): '${version}' => '${clean_version}'"
   echo "${clean_version}"
   return 0
 }

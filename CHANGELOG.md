@@ -1,5 +1,10 @@
 ## [Unreleased]
+### Changed
+- Applied $pkg_name substitution to all pkg_source lines
+- Added more formats for sourceforge URIs
 
+### Notes
+Accuracy at 38% (239/636).
 
 ## [0.0.4]
 ### Added
