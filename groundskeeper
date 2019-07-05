@@ -148,7 +148,7 @@ do_default_latest_version() {
         return $?
       fi
 
-      if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]]; then
+      if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]] || [[ "${pkg_source_line}" =~ github\.com\/.*\/releases\/ ]]; then
         is_github=1
         repo_ident=$(github_repo_ident "${plan}")
         github_latest_version "${repo_ident}"
@@ -241,6 +241,7 @@ github_latest_version() {
   return 0
 }
 
+# TODO
 github_newest_release() {
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases")
 
@@ -254,7 +255,7 @@ github_repo_ident() {
   pushd "${CLONE_DIR}/${plan}" > /dev/null
     ident=$(cat plan.sh \
       | grep pkg_source \
-      | grep "github\.com\/.*\/archive\/" \
+      | egrep "github\.com\/.*\/(archive|releases)\/" \
       | sed -E 's/^.*github\.com\/([^\/]+)\/([^\/]+)\/.*/\1\/\2/')
     #                             ^ org     ^ repo
 

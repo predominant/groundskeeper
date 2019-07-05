@@ -5,6 +5,7 @@
 - Remove prefixed `release-` on version strings
 - Erlang processing
 - Libsodium override to use Github releases
+- Added 'releases' marked pkg_source to github parsing
 
 ### Changed
 - Sourceforge now supports all common compression formats
