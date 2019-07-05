@@ -9,8 +9,7 @@ CLONE_DIR="core-plans"
 STUDIO_TYPE="groundskeeper"
 DEBUG=${DEBUG:-0}
 ALL_PLANS=()
-
-
+SKIP_CLONE=${SKIP_CLONE:-0}
 
 debug_echo() {
   if [ ${DEBUG} -eq 0 ]; then
@@ -495,10 +494,12 @@ check_environment() {
 }
 
 check_environment
-prepare_dependencies || exit 1
-echo
-clone_repository || exit 1
-echo
+if [ $SKIP_CLONE -eq 0 ]; then
+  prepare_dependencies || exit 1
+  echo
+  clone_repository || exit 1
+  echo
+fi
 
 source habitat/components/plan-build/bin/public.bash
 source habitat/components/plan-build/bin/shared.bash
