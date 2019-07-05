@@ -96,3 +96,18 @@ do_postgresql_latest_version() {
     | tail -1)"
   return 0
 }
+
+# Handles erlang short codes (Eg: "16", "18", "19")
+do_erlang_latest_version() {
+  local version="${1}"
+  echo "$(curl -s "http://erlang.org/download/" \
+    | grep "otp_src_${version}" \
+    | sed -E 's/^.*<A HREF[^>]+>([^<]+)<.*$/\1/' \
+    | egrep -v '(readme|doc_)' \
+    | egrep -v 'rc[0-9]+\.' \
+    | sed -E 's/\.tar\.(gz|bz2|xz|Z)//' \
+    | sed 's/otp_src_//' \
+    | sort --version-sort \
+    | tail -1)"
+  return 0
+}

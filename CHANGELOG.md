@@ -2,12 +2,16 @@
 ### Added
 - Hashicorp release json parsing
 - c-ares version string parsing
+- Remove prefixed `release-` on version strings
+- Erlang processing
+- Libsodium override to use Github releases
 
 ### Changed
 - Sourceforge now supports all common compression formats
+- Github ident parsing now handles embedded pkg_name
 
 ### Notes
-Accuracy at 26% (166/636).
+Accuracy at 27% (173/636).
 
 ### Known bugs
 - Returns a HTML string
@@ -16,6 +20,7 @@ Accuracy at 26% (166/636).
   - libpipeline
   - lzip
 - `gtk` (?) causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
+- Boost returns a lower version as latest
 
 ## [0.0.3]
 ### Added

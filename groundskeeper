@@ -65,6 +65,12 @@ debug_plans() {
   done
 }
 
+is_base_plan() {
+  local plan="${1}"
+  cat "${CLONE_DIR}/base-plans.txt" | grep "\/${plan}$" > /dev/null
+  return $?
+}
+
 do_latest_version() {
   do_default_latest_version "${1}"
 }
@@ -115,6 +121,11 @@ do_default_latest_version() {
       do_default_latest_version "bash"
       return $?
       ;;
+    libsodium|libsodum-musl)
+      # Force the github check with the correct repo name
+      github_latest_version "jedisct1/libsodium"
+      return $?
+      ;;
     lsof)
       do_lsof_latest_version
       return $?
@@ -123,6 +134,17 @@ do_default_latest_version() {
       if [[ "${plan}" =~ ^postgresql ]]; then
         postgresql_code="$(echo "${plan}" | sed 's/postgresql//')"
         do_postgresql_latest_version "${postgresql_code}"
+        return $?
+      fi
+
+      if [[ "${plan}" =~ ^erlang ]]; then
+        erlang_code=""
+        if [[ "${plan}" = "erlang16" ]]; then
+          erlang_code="R16"
+        else
+          erlang_code="$(echo "${plan}" | sed 's/^erlang//')"
+        fi
+        do_erlang_latest_version "${erlang_code}"
         return $?
       fi
 
@@ -234,6 +256,13 @@ github_repo_ident() {
       | grep pkg_source \
       | grep "github\.com\/.*\/archive\/" \
       | sed -E 's/^.*github\.com\/([^\/]+)\/([^\/]+)\/.*/\1\/\2/')
+    #                             ^ org     ^ repo
+
+    # Replace idents that have a ${pkg_name} or $pkg_name embedded in them
+    if [[ "${ident}" =~ ^.*\/\$\{pkg_name\} ]]; then
+      ident="$(echo "${ident}" | sed "s/\${pkg_name}/${plan}/")"
+      ident="$(echo "${ident}" | sed "s/\$pkg_name/${plan}/")"
+    fi
   popd > /dev/null
 
   if [ "${ident}" = "" ]; then
@@ -405,6 +434,9 @@ clean_version_string() {
   # Remove preceding 'v'
   clean_version="$(echo "${clean_version}" | sed 's/^v//')"
 
+  # Remove preceding 'release-'
+  clean_version="$(echo "${clean_version}" | sed 's/^release-//')"
+
   # Remove preceding plan name (eg: azure-cli, 7zip), and also
   # checking for apache- prefix
   clean_version="$(echo "${clean_version}" | sed -E "s/^(apache-)?${plan}[-_]//")"
@@ -499,23 +531,23 @@ for plan in "${ALL_PLANS[@]}"; do
   lv=$(clean_version_string "$(do_latest_version "${plan}")" "${plan}")
   lv_status=$?
 
-  update_status="| "
+  update_status="|"
   if [ ${lv_status} -eq 0 ] && [ "${pv}" != "${lv}" ]; then
-    update_status="> "
+    update_status=">"
   fi
   if [ "${lv}" = "unknown" ] || [ "${lv}" = "" ] || [ -z "${lv}" ]; then
-    update_status="- "
+    update_status="-"
   else
     detected_version_total=$((detected_version_total + 1))
   fi
 
-  echo "${update_status}${plan} ${pv} ${lv}"
+  base_plan=""
+  is_base_plan "${plan}"
+  if [ $? -eq 0 ]; then
+    base_plan="(base-plan)"
+  fi
 
-  # TEMPORARY measure to prevent looping all plans during development.
-  # if [ "${plan}" = "bats" ]; then
-  #   echo "Breaking"
-  #   break
-  # fi
+  echo "${update_status} ${plan} ${pv} ${lv} ${base_plan}"
 done
 
 echo
