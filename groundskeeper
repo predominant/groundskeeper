@@ -494,7 +494,7 @@ check_environment() {
 }
 
 check_environment
-if [ $SKIP_CLONE -eq 0 ]; then
+if [ ${SKIP_CLONE} -eq 0 ]; then
   prepare_dependencies || exit 1
   echo
   clone_repository || exit 1
