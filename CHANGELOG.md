@@ -3,6 +3,7 @@
 - Applied `$pkg_name` substitution to all pkg_source lines
 - Applied `$_url_base` transformations
 - Added more formats for sourceforge URIs
+- Fix wget-static
 
 ### Notes
 Accuracy at 38% (242/636).
