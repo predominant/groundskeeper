@@ -160,6 +160,10 @@ do_default_latest_version() {
       do_lsof_latest_version
       return $?
       ;;
+    wget-static)
+      do_default_latest_version "wget"
+      return $?
+      ;;
     *)
       if [[ "${plan}" =~ ^postgresql ]]; then
         postgresql_code="$(echo "${plan}" | sed 's/postgresql//')"
