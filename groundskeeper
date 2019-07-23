@@ -153,7 +153,7 @@ do_default_latest_version() {
       ;;
     libsodium|libsodum-musl)
       # Force the github check with the correct repo name
-      github_latest_version "jedisct1/libsodium"
+      github_latest_release "jedisct1/libsodium"
       return $?
       ;;
     lsof)
@@ -185,7 +185,7 @@ do_default_latest_version() {
       if [[ "${pkg_source_line}" =~ github\.com\/.*\/archive\/ ]] || [[ "${pkg_source_line}" =~ github\.com\/.*\/releases\/ ]]; then
         is_github=1
         repo_ident=$(github_repo_ident "${plan}")
-        github_latest_version "${repo_ident}"
+        github_latest_release "${repo_ident}"
         return $?
       fi
 
@@ -251,15 +251,15 @@ do_default_latest_version() {
 # ```
 # github_latest_release owner/repo-name
 # ```
-github_latest_version() {
+github_latest_release() {
   local ident="${1}"
-  debug_echo "github_latest_version(${ident})"
+  debug_echo "github_latest_release(${ident})"
 
   # Some repositories use Releases correctly. Those are by far the simplest cases.
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases/latest")
   local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
   if [ "${is_prerelease}" = "true" ]; then
-    github_newest_release "${ident}"
+    github_last_release "${ident}"
     return $?
   fi
 
@@ -268,7 +268,7 @@ github_latest_version() {
 
   # If the releases are empty, we can also check tags as an alternative
   if [ "${latest_version}" = "" -o "${latest_version}" = "null" ]; then
-    # TODO: Search for latest tag?
+    # TODO: Search for latest tag
     echo "unknown"
     return 1
   fi
@@ -277,11 +277,22 @@ github_latest_version() {
   return 0
 }
 
-# TODO
-github_newest_release() {
+# Check 'github releases' and read the latest non-prerelease, non-draft release.
+#
+# In contrast with the above `github_latest_release`, this gets a list of all
+# releases, not the one Github has tagged as 'latest'. This is due to the way
+# some projects use tags as releases, but don't specifically produce a release.
+github_last_release() {
   local latest_json=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -s "https://api.github.com/repos/${ident}/releases")
 
-  local is_prerelease=$(echo "${latest_json}" | jq -r '.prerelease or .draft')
+  # TODO:
+  #   - Check if there are any releases
+  #   - Get the last one that is not pre-release or draft
+  #   - echo release
+  #   - return 0
+
+  local last_release=$(echo "${latest_json} | jq -r '[.[] | select(.prerelease == false and .draft == false)][0]'")
+  
 }
 
 # Get the github repo ident (owner/repo) from a pkg_source line

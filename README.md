@@ -28,6 +28,12 @@ The fields are:
 
 This may not work for all plans consumed, but is designed to be improved over time to encompass as many cases as possible.
 
+You can check an individual plan by providing its name:
+
+```
+./groundskeeper bats
+```
+
 You can filter the output as necessary by piping the output through `grep`/`sed`. Examples:
 
 ```
