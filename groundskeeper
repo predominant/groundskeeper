@@ -247,7 +247,7 @@ do_default_latest_version() {
 # 1. Get latest release from github
 # 2. If (1) is a pre-release, try fetching the latest non-prerelease from all releases
 # 3. If (1) is invalid/null, try fetching the latest non-prerelease from all releases
-# 
+#
 # ```
 # github_latest_release owner/repo-name
 # ```
@@ -292,7 +292,7 @@ github_last_release() {
   #   - return 0
 
   local last_release=$(echo "${latest_json} | jq -r '[.[] | select(.prerelease == false and .draft == false)][0]'")
-  
+
 }
 
 # Get the github repo ident (owner/repo) from a pkg_source line
@@ -565,7 +565,7 @@ cache_xorg_xcb="$(curl -s https://www.x.org/releases/individual/xcb/)"
 if [ -z $1 ]; then
   get_all_plans
 else
-  ALL_PLANS=("${1}")
+  ALL_PLANS=("$@")
 fi
 
 plan_count_total=0
