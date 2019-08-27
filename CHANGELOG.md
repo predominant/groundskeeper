@@ -4,16 +4,15 @@
 - Applied `$_url_base` transformations
 - Added more formats for sourceforge URIs
 - Fix wget-static
+- Fallback to release monitoring API to get more coverage
 
 ### Notes
-Accuracy at 38% (242/636).
+Accuracy at 73% (459/627).
 
 ### Known bugs
 - Returns a HTML string
-  - freetype
   - kafka
   - libpipeline
-  - lzip
   - spark
 - `gtk` (?) causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
 - Boost returns a lower version as latest
