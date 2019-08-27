@@ -10,12 +10,8 @@
 Accuracy at 73% (459/627).
 
 ### Known bugs
-- Returns a HTML string
-  - kafka
-  - libpipeline
-  - spark
-- `gtk` (?) causes a parse error: `parse error: Invalid numeric literal at line 1, column 10`
-- Boost returns a lower version as latest
+
+Moved known bugs to [Github Issues](https://github.com/predominant/groundskeeper/issues).
 
 ## [0.0.4]
 ### Added
