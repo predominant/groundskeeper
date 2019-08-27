@@ -705,7 +705,7 @@ for plan in "${ALL_PLANS[@]}"; do
   case "${FORMAT}" in
     json)
       lv=$(echo "${lv}" | sed 's/"/\\"/g')
-      echo "{plan:\"${plan}\",status:\"${update_status}\",plan_version:\"${pv}\",latest_version:\"${lv}\",base:${base_plan}},"
+      echo "{\"plan\":\"${plan}\",\"status\":\"${update_status}\",\"plan_version\":\"${pv}\",\"latest_version\":\"${lv}\",\"base\":${base_plan}},"
       ;;
     *)
       echo "${update_status} ${plan} ${pv} ${lv} ${base_plan}"
