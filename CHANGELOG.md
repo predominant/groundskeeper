@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.1.0]
 ### Changed
 - Applied `$pkg_name` substitution to all pkg_source lines
 - Applied `$_url_base` transformations
@@ -68,3 +70,5 @@ Accuracy at 17% (111/645).
 [Unreleased]: https://github.com/predominant/groundskeeper/compare/0.0.1...HEAD
 [0.0.1]: https://github.com/predominant/groudskeeper/releases/tag/0.0.1
 [0.0.3]: https://github.com/predominant/groudskeeper/releases/tag/0.0.3
+[0.0.4]: https://github.com/predominant/groudskeeper/releases/tag/0.0.4
+[0.1.0]: https://github.com/predominant/groudskeeper/releases/tag/0.1.0
