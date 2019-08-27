@@ -8,6 +8,7 @@ CORE_PLANS_GIT_URI="https://github.com/habitat-sh/core-plans.git"
 CLONE_DIR="core-plans"
 STUDIO_TYPE="groundskeeper"
 DEBUG=${DEBUG:-0}
+FORMAT=${FORMAT:-"text"}
 ALL_PLANS=()
 SKIP_CLONE=${SKIP_CLONE:-0}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd )"
@@ -663,6 +664,10 @@ fi
 plan_count_total=0
 detected_version_total=0
 
+if [ "${FORMAT}" = "json" ]; then
+  echo "{\"plans\":["
+fi
+
 for plan in "${ALL_PLANS[@]}"; do
   if [[ "${plan}" =~ ^scaffolding ]]; then
     # Skip scaffolding plans.
@@ -691,17 +696,39 @@ for plan in "${ALL_PLANS[@]}"; do
     detected_version_total=$((detected_version_total + 1))
   fi
 
-  base_plan=""
+  base_plan="false"
   is_base_plan "${plan}"
   if [ $? -eq 0 ]; then
-    base_plan="(base-plan)"
+    base_plan="true"
   fi
 
-  echo "${update_status} ${plan} ${pv} ${lv} ${base_plan}"
+  case "${FORMAT}" in
+    json)
+      lv=$(echo "${lv}" | sed 's/"/\\"/g')
+      echo "{plan:\"${plan}\",status:\"${update_status}\",plan_version:\"${pv}\",latest_version:\"${lv}\",base:${base_plan}},"
+      ;;
+    *)
+      echo "${update_status} ${plan} ${pv} ${lv} ${base_plan}"
+      ;;
+  esac
 done
 
-echo
-echo "[ Summary ] ------------------------------------------"
-echo "  Total plans:     ${plan_count_total}"
-echo "  Found versions:  ${detected_version_total}"
-echo
+if [ "${FORMAT}" = "json" ]; then
+  echo "{}],"
+fi
+
+case "${FORMAT}" in
+  json)
+    echo "\"summary\":{"
+    echo "\"total_plans\":${plan_count_total},"
+    echo "\"found_versions\":${detected_version_total}"
+    echo "}]"
+    ;;
+  *)
+    echo
+    echo "[ Summary ] ------------------------------------------"
+    echo "  Total plans:     ${plan_count_total}"
+    echo "  Found versions:  ${detected_version_total}"
+    echo
+    ;;
+esac
