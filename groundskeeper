@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #/ groundskeeper, Version 0.0.4
 #/ Copyright 2019, Graham Weldon <graham@grahamweldon.com>
 #/
@@ -10,6 +10,10 @@ STUDIO_TYPE="groundskeeper"
 DEBUG=${DEBUG:-0}
 ALL_PLANS=()
 SKIP_CLONE=${SKIP_CLONE:-0}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd )"
+RELEASE_MONITORING_ID_FILE="${SCRIPT_DIR}/release_monitoring_ids"
+
+declare -A release_monitoring_ids
 
 debug_echo() {
   if [ ${DEBUG} -eq 0 ]; then
@@ -17,6 +21,10 @@ debug_echo() {
   fi
 
   echo "${@}" >&2
+}
+
+error() {
+  echo "$@" >&2
 }
 
 # Prepare dependencies for this script
@@ -238,6 +246,9 @@ do_default_latest_version() {
         xorg_latest_version "${plan}" "${xorg_type}"
         return $?
       fi
+
+      release_monitoring_latest_version "${plan}"
+      return $?
       ;;
   esac
 }
@@ -452,6 +463,67 @@ hashicorp_latest_version() {
   return $?
 }
 
+# load_release_monitoring_metadata populates the global
+# release_monitoring_ids associative arrays
+load_release_monitoring_metadata() {
+  debug_echo "Loading release-monitoring.org IDs from $RELEASE_MONITORING_ID_FILE"
+  while read -r plan_name package_id; do
+    # We prefix the plan name here to correctly handle packages like
+    # 7zip which start with numbers.
+    local key="plan${plan_name}"
+    release_monitoring_ids[$key]=$package_id
+  done <"$RELEASE_MONITORING_ID_FILE"
+  debug_echo "Loaded ${#release_monitoring_ids[@]} release-monitoring.org IDS"
+}
+
+# lookup_release_monitoring_project_id takes a plan_name and returns a
+# release-monitoring.org project ID. "unknown" is returned if the key
+# is not known.
+lookup_release_monitoring_project_id() {
+  local plan_name=$1
+  local key="plan${plan_name}"
+  echo "${release_monitoring_ids[$key]:-unknown}"
+}
+
+# get_release_monitoring_version queries the release minotirng API for
+# the latest version of the given project_id.
+get_release_monitoring_version() {
+  local project_id=$1
+  local curl_logging_args
+  local output
+
+  if [[ "$DEBUG" -ge 2 ]]; then
+    curl_logging_args=("-vv")
+  else
+    curl_logging_args=("--stderr" "/dev/null")
+  fi
+
+  debug_echo "Looking up version from https://release-monitoring.org/api/project/$project_id"
+  local url="https://release-monitoring.org/api/project/$project_id"
+  if output=$(curl "${curl_logging_args[@]}" --retry 2 "$url"); then
+    jq -r .version <<<"$output"
+  else
+    error "release-monitoring.org returned an error."
+    error "STDOUT:"
+    error "$output"
+    error ""
+    return 1
+  fi
+}
+
+release_monitoring_latest_version() {
+  local plan=$1
+  local id
+  debug_echo "Using release-monitoring.org fallback lookup for ${plan}"
+  id="$(lookup_release_monitoring_project_id "$plan")"
+  if [[ "${id}" = "unknown" ]]; then
+    debug_echo "No release-monitoring.org ID for ${plan}"
+    return 1
+  fi
+
+  get_release_monitoring_version "${id}"
+}
+
 # Attempt to clean up a version string, takes the plan name as a parameter
 # in case it has a special / weird ruleset.
 # ```
@@ -556,6 +628,8 @@ source habitat/components/plan-build/bin/shared.bash
 
 source "$(dirname ${0})/_plan_specific.bash"
 
+load_release_monitoring_metadata || exit 1
+
 # Cache the x.org lists, because they're all on the same page.
 cache_xorg_lib="$(curl -s https://www.x.org/releases/individual/lib/)"
 cache_xorg_app="$(curl -s https://www.x.org/releases/individual/app/)"
@@ -579,13 +653,12 @@ for plan in "${ALL_PLANS[@]}"; do
 
   plan_count_total=$((plan_count_total + 1))
 
-  if [ ${DEBUG} -eq 1 ]; then
+  if [ "${DEBUG}" -ge 1 ]; then
     echo
   fi
 
   # pv = Plan Version
   pv=$(plan_version "${plan}")
-  pv_status=$?
   # lv = Latest Version
   lv=$(clean_version_string "$(do_latest_version "${plan}")" "${plan}")
   lv_status=$?
