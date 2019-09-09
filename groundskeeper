@@ -213,7 +213,14 @@ do_default_latest_version() {
       fi
 
       if [[ "${pkg_source_line}" =~ download\.gnome\.org ]]; then
-        gnome_latest_version "${plan}"
+        case "${plan}" in
+          gtk2)
+            gnome_latest_version_constrained "gtk+" "2\.[2-8]"
+            ;;
+          *)
+            gnome_latest_version "${plan}"
+            ;;
+        esac
         return $?
       fi
 
@@ -394,6 +401,17 @@ gnome_latest_version() {
     | jq -r --arg PLAN_NAME "${plan}" '.[2][$PLAN_NAME] | .[]' \
     | sort --version-sort \
     | tail -1)"
+  return 0
+}
+
+gnome_latest_version_constrained() {
+  local plan="${1}"
+  local constraint="${2}"
+  curl -s "https://download.gnome.org/sources/${plan}/cache.json" \
+    | jq -r --arg PLAN_NAME "${plan}" '.[2][$PLAN_NAME] | .[]' \
+    | sort --version-sort \
+    | grep "^${constraint}" \
+    | tail -1
   return 0
 }
 
