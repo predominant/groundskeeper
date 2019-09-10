@@ -1,0 +1,32 @@
+name: Main Workflow
+
+on:
+  push:
+  schedule:
+  - cron: '42 * * * *'
+
+jobs:
+  build:
+    name: MacOS Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+#       - name: GitHub Action for Homebrew
+#         uses: artemnovichkov/action-homebrew@master
+#         with:
+#           args: install bash
+
+      - name: Homebrew version
+        run: brew install bash
+
+      - name: Bash version check  
+        run: $(brew --prefix bash)/bin/bash --version
+
+      - name: Run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
+        run: $(brew --prefix bash)/bin/bash ./groundskeeper
+

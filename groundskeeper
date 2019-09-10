@@ -4,7 +4,7 @@
 #/
 
 CLONE_DEPTH=1
-CORE_PLANS_GIT_URI="git@github.com:habitat-sh/core-plans.git"
+CORE_PLANS_GIT_URI="https://github.com/habitat-sh/core-plans.git"
 CLONE_DIR="core-plans"
 STUDIO_TYPE="groundskeeper"
 DEBUG=${DEBUG:-0}
@@ -32,7 +32,7 @@ error() {
 prepare_dependencies() {
   echo "[ Habitat ] ------------------------------------------"
   if [ ! -d habitat ]; then
-    git clone --depth "${CLONE_DEPTH}" git@github.com:habitat-sh/habitat.git habitat
+    git clone --depth "${CLONE_DEPTH}" https://github.com/habitat-sh/habitat.git habitat
     return $?
   fi
   update_repository habitat
