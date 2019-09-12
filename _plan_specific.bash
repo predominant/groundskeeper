@@ -66,7 +66,7 @@ do_artifactory_latest_version() {
   return 0
 }
 
-do_bash_current_version() {
+do_base_version_current_version() {
   local plan_source="$(cat plan.sh)"
   _base_version="$(echo "${plan_source}" \
     | grep '^_base_version=' \

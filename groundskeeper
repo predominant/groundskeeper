@@ -597,8 +597,8 @@ plan_version() {
   local version=""
   pushd "${CLONE_DIR}/${plan}" > /dev/null
     case "${plan}" in
-      bash)
-        version="$(do_bash_current_version)"
+      bash|cmake|readline|readline6)
+        version="$(do_base_version_current_version)"
         ;;
       *)
         # The `tr` command here trims single and double quotes:
