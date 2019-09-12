@@ -13,20 +13,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-#       - name: GitHub Action for Homebrew
-#         uses: artemnovichkov/action-homebrew@master
-#         with:
-#           args: install bash
+      - name: Install gist CLI
+        run: gem install gist
 
-      - name: Homebrew version
+      - name: Setup gist credentials
+        run: echo "${{ secrets.GIST_TOKEN }}" > "${HOME}/.gist"
+
+      - name: Install Bash
         run: brew install bash
 
       - name: Bash version check  
         run: $(brew --prefix bash)/bin/bash --version
 
-      - name: Run
+      - name: Run Groundskeeper
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
-        run: $(brew --prefix bash)/bin/bash ./groundskeeper
-
+        run: $(brew --prefix bash)/bin/bash ./groundskeeper | tee groundskeeper-output.txt
+      
+      - name: Update Gist
+        run: gist -u 17185cdea483af398ca02175cb18d96f groundskeeper-output.txt

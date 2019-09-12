@@ -119,4 +119,4 @@ See LICENSE file.
 
 [biome]: https://github.com/biome-sh
 [habitat]: https://github.com/habitat-sh
-[gist]: https://gist.github.com/predominant/648d5a19d316677e5e3e39620bea5b41
+[gist]: https://gist.github.com/predominant/17185cdea483af398ca02175cb18d96f
