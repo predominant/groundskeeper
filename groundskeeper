@@ -601,7 +601,10 @@ plan_version() {
         version="$(do_bash_current_version)"
         ;;
       *)
-        version="$(cat plan.sh | grep "^pkg_version=" | awk -F'=' '{print $2}' | tr -d '"{}')"
+        # The `tr` command here trims single and double quotes:
+        # - "'" === Single quote
+        # - '"{}' === Double quote and braces
+        version="$(cat plan.sh | grep "^pkg_version=" | awk -F'=' '{print $2}' | "'"'"{}')"
         ;;
     esac
   popd > /dev/null
