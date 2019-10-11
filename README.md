@@ -1,5 +1,3 @@
-# Groundskeeper
-
 A tool designed to parse through all the plan files in [Biome][biome] (or [Habitat][habitat]), and discover the latest version available for that plan.
 
 Output is compact, but simple to understand and read. Each line contains 3 fields. A plan with a detected possible update has a prefixed `> `. An up to date plan has a preceeding pipe `| `. Errors or inability to check latest version are prefixed with `- `
