@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Added
+- Apache archive parser for packages using version number directories
+
+### Changed
+- Fixed Kafka, Spark and libpipeline returning HTML
+
+### Notes
+Accuracy at 73% (462/630)
+
 ## [0.1.0]
 ### Changed
 - Applied `$pkg_name` substitution to all pkg_source lines
