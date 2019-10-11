@@ -159,6 +159,10 @@ do_default_latest_version() {
       do_default_latest_version "bash"
       return $?
       ;;
+    kafka)
+      apache_latest_version_directory "" "kafka"
+      return $?
+      ;;
     libsodium|libsodum-musl)
       # Force the github check with the correct repo name
       github_latest_release "jedisct1/libsodium"
@@ -166,6 +170,22 @@ do_default_latest_version() {
       ;;
     lsof)
       do_lsof_latest_version
+      return $?
+      ;;
+    spark)
+      apache_latest_version_directory "spark-" "spark"
+      return $?
+      ;;
+    tomcat7)
+      apache_latest_version_directory "v" "tomcat/tomcat-7"
+      return $?
+      ;;
+    tomcat8)
+      apache_latest_version_directory "v" "tomcat/tomcat-8"
+      return $?
+      ;;
+    tomcat9)
+      apache_latest_version_directory "v" "tomcat/tomcat-9"
       return $?
       ;;
     wget-static)
@@ -382,10 +402,29 @@ apache_latest_version() {
 
   echo "$(curl -s "https://archive.apache.org/dist/${directory}/" \
     | grep "${plan}-[0-9]" \
-    | grep -v -E "\.(asc|md5|sha)" \
+    | grep -v -E "\.(asc|md5|sha|sh1)" \
     | sed -E 's/^.*(zip|bz2|gz|xz|Z|7z|lz)">([^<]*)<\/a>.*$/\2/' \
     | sed -E 's/^(.*)\.(tar\.(bz2|gz|xz|Z|lz)|zip|7z)/\1/' \
-    | grep -v "RC" \
+    | grep -v "\(RC\|beta\|preview\)" \
+    | grep -v "win32" \
+    | sed 's/-src$//' \
+    | sort --version-sort \
+    | uniq \
+    | tail -1)"
+  return 0
+}
+
+# Get the latest version from the apache archive, when releases are organised into directories (like Kafka and  Spark)
+apache_latest_version_directory() {
+  local prefix="${1}"
+  local directory="${2:-1}"
+
+  echo "$(curl -s "https://archive.apache.org/dist/${directory}/" \
+    | grep "${prefix}[0-9\.]\+\/" \
+    | grep -v -E "\.(asc|md5|sha|sh1)" \
+    | sed -E 's/^.*\/">([^<]*)\/<\/a>.*$/\1/' \
+    | sed -E 's/^(.*)\.(tar\.(bz2|gz|xz|Z)|zip|7z|lz|tgz)/\1/' \
+    | grep -v "\(RC\|beta\|preview\)" \
     | grep -v "win32" \
     | sed 's/-src$//' \
     | sort --version-sort \
@@ -420,7 +459,7 @@ savannah_gnu_latest_version() {
   local plan="${1}"
   echo "$(curl -s "https://download.savannah.gnu.org/releases/${plan}/" \
     | grep "${plan}-[0-9]" \
-    | grep -v '\.sig">' \
+    | grep -v '\.\(sig\|asc\)">' \
     | sed -E 's/^.*(gz|bz2|xz|Z|lz)">([^<]*)\.tar\.(gz|bz2|xz|Z|lz)<\/a>.*/\2/' \
     | sed -E 's/\.(src\.)?tar\.gz//' \
     | egrep -v '(rc[0-9]+|pre)' \
