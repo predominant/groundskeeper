@@ -65,7 +65,7 @@ update_repository() {
 
 # Get an array of all plans
 get_all_plans() {
-  ALL_PLANS=($(find "${CLONE_DIR}" -name plan.sh -d 2 | sort | awk -F'/' '{print $2}'))
+  ALL_PLANS=($(find "${CLONE_DIR}" -maxdepth 2 -mindepth 2 -name plan.sh | sort | awk -F'/' '{print $2}'))
 }
 
 debug_plans() {
